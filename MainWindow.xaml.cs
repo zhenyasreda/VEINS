@@ -23,6 +23,8 @@ public partial class MainWindow : FluentWindow
 
         ProtocolCombo.ItemsSource = ProtocolRegistry.All.Select(i => i.DisplayName).ToList();
         ProtocolCombo.SelectedIndex = 0;
+
+        LoadSettings();
     }
 
     private void OnThemeToggleClick(object sender, RoutedEventArgs e)
@@ -130,6 +132,7 @@ public partial class MainWindow : FluentWindow
             CopyButton.IsEnabled = true;
             ResultCard.Visibility = Visibility.Visible;
             AppendLog(Localization.T("done"));
+            SaveSettings(request);
         }
         catch (ProvisionException ex)
         {
@@ -228,5 +231,51 @@ public partial class MainWindow : FluentWindow
     {
         LogBox.AppendText(message + Environment.NewLine);
         LogBox.ScrollToEnd();
+    }
+
+    private void LoadSettings()
+    {
+        var settings = AppSettings.Load();
+        if (string.IsNullOrEmpty(settings.Host)) return;
+
+        HostBox.Text = settings.Host;
+        SshPortBox.Text = settings.SshPort.ToString();
+        UserBox.Text = settings.SshUser;
+
+        if (!string.IsNullOrEmpty(settings.KeyPath) && File.Exists(settings.KeyPath))
+        {
+            KeyBox.Text = settings.KeyPath;
+        }
+    }
+
+    private void SaveSettings(ProvisionRequest req)
+    {
+        var keyPath = req.KeyPath ?? "";
+
+        if (string.IsNullOrEmpty(keyPath) && !string.IsNullOrEmpty(req.Password))
+        {
+            var keysDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VpnProvisioner", "keys");
+            var autoKey = Path.Combine(keysDir, $"{req.Host}_{req.SshPort}_id_ed25519");
+            if (File.Exists(autoKey))
+            {
+                keyPath = autoKey;
+            }
+        }
+
+        var settings = new AppSettings
+        {
+            Host = req.Host,
+            SshPort = req.SshPort,
+            SshUser = req.SshUser,
+            KeyPath = keyPath,
+        };
+        settings.Save();
+
+        if (!string.IsNullOrEmpty(keyPath) && KeyBox.Text != keyPath)
+        {
+            KeyBox.Text = keyPath;
+        }
     }
 }
