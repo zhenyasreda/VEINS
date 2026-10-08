@@ -1,6 +1,6 @@
 #define MyAppName "VEINS"
 #define MyAppFullName "VEINS — VPN Easy Install"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "Zhenya Sreda"
 #define MyAppURL "https://github.com/zhekasrc/VEINS"
 #define MyAppExeName "VEINS.exe"
@@ -26,7 +26,7 @@ SolidCompression=yes
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
-VersionInfoVersion=1.0.0.0
+VersionInfoVersion=1.0.2.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppFullName}
 VersionInfoCopyright=Copyright (C) 2026 {#MyAppPublisher}
