@@ -19,6 +19,12 @@ public sealed class AmneziaWgInstaller : IProtocolInstaller
 
     public async Task<ProvisionResult> ProvisionAsync(SshSession ssh, ServerInfo info, ProvisionRequest req, IProgress<string> log, CancellationToken ct)
     {
+        if (info.Port443Busy)
+        {
+            log.Report("Порт 443 занят. Останавливаю конфликтующие сервисы...");
+            await ProtocolRegistry.StopConflictingServicesAsync(ssh, "awg-quick@awg0", log);
+        }
+
         await InstallPackagesAsync(ssh, info, log);
         ct.ThrowIfCancellationRequested();
 

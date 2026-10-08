@@ -26,4 +26,23 @@ public static class ProtocolRegistry
         }
         return installer;
     }
+
+    private static readonly string[] AllServices =
+    [
+        "xray", "hysteria-server", "trojan", "awg-quick@awg0"
+    ];
+
+    public static async Task StopConflictingServicesAsync(Ssh.SshSession ssh, string exceptService, IProgress<string> log)
+    {
+        foreach (var svc in AllServices)
+        {
+            if (svc == exceptService) continue;
+            var active = await ssh.RunAsync($"systemctl is-active {svc}");
+            if (active.Output.Trim() == "active" || active.Output.Trim() == "activating")
+            {
+                await ssh.RunAsync($"systemctl stop {svc}");
+                log.Report($"Остановлен конфликтующий сервис: {svc}");
+            }
+        }
+    }
 }

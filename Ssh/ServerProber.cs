@@ -30,16 +30,23 @@ public static class ServerProber
 
         info.HasXray = await ssh.CommandExistsAsync("xray");
 
+        var busyLines = new List<string>();
+
         var listening = await ssh.RunAsync("ss -tlnp", requireRoot: false);
         if (!listening.Ok)
         {
             listening = await ssh.RunAsync("netstat -tlnp", requireRoot: false);
         }
-        var busyLines = listening.Output
+        busyLines.AddRange(listening.Output
             .Split('\n')
-            .Where(l => (l.Contains(":443 ") || l.TrimEnd().EndsWith(":443")) && !l.Contains("(\"xray\""))
-            .ToArray();
-        if (busyLines.Length > 0)
+            .Where(l => (l.Contains(":443 ") || l.TrimEnd().EndsWith(":443")) && !l.Contains("(\"xray\"")));
+
+        var udpListening = await ssh.RunAsync("ss -ulnp", requireRoot: false);
+        busyLines.AddRange(udpListening.Output
+            .Split('\n')
+            .Where(l => (l.Contains(":443 ") || l.TrimEnd().EndsWith(":443")) && !l.Contains("(\"xray\"")));
+
+        if (busyLines.Count > 0)
         {
             info.Port443Busy = true;
             info.Port443Details = string.Join("\n", busyLines).Trim();

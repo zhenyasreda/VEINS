@@ -22,9 +22,8 @@ public sealed class TrojanInstaller : IProtocolInstaller
     {
         if (info.Port443Busy)
         {
-            throw new ProvisionException(
-                $"Порт 443 на сервере уже занят: \n{info.Port443Details}\n" +
-                "Освободите порт (например, остановите nginx/apache/xray) и повторите попытку.");
+            log.Report($"Порт 443 занят. Останавливаю конфликтующие сервисы...");
+            await ProtocolRegistry.StopConflictingServicesAsync(ssh, "trojan", log);
         }
 
         await InstallBinaryAsync(ssh, info, log);
