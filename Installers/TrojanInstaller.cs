@@ -48,10 +48,11 @@ public sealed class TrojanInstaller : IProtocolInstaller
 
     private static async Task InstallBinaryAsync(SshSession ssh, ServerInfo info, IProgress<string> log)
     {
-        var existing = await ssh.RunAsync($"test -x {BinaryPath} && {BinaryPath} --version");
+        var existing = await ssh.RunAsync($"test -x {BinaryPath} && {BinaryPath} --version 2>&1");
         if (existing.Ok)
         {
-            log.Report($"Trojan уже установлен ({existing.Output.Trim()}) — пропускаю загрузку.");
+            var verStr = (existing.Output + existing.Error).Trim();
+            log.Report($"Trojan уже установлен ({verStr}) — пропускаю загрузку.");
             return;
         }
 
@@ -96,8 +97,8 @@ public sealed class TrojanInstaller : IProtocolInstaller
         }
         await ssh.RunAsync($"rm -rf {tmpDir}");
 
-        var ver = await ssh.RunAsync($"{BinaryPath} --version");
-        log.Report($"Установлено: {ver.Output.Trim()}");
+        var ver = await ssh.RunAsync($"{BinaryPath} --version 2>&1");
+        log.Report($"Установлено: {(ver.Output + ver.Error).Trim()}");
     }
 
     private static async Task<bool> CheckGithubAccessAsync(SshSession ssh, IProgress<string> log)
@@ -177,59 +178,50 @@ public sealed class TrojanInstaller : IProtocolInstaller
 
         var config = new Dictionary<string, object?>
         {
-            ["run_as"] = "nobody",
-            ["max_open_files"] = 100000,
-            ["keep_alive"] = new Dictionary<string, object?>
-            {
-                ["timeout"] = 600
-            },
+            ["run_type"] = "server",
+            ["local_addr"] = "0.0.0.0",
+            ["local_port"] = Port,
+            ["remote_addr"] = "127.0.0.1",
+            ["remote_port"] = 80,
+            ["password"] = new object?[] { password },
+            ["log_level"] = 1,
             ["ssl"] = new Dictionary<string, object?>
             {
                 ["cert"] = $"{CertDir}/cert.pem",
                 ["key"] = $"{CertDir}/key.pem",
                 ["key_password"] = "",
-                ["ca"] = "",
-                ["ciphers"] = "",
-                ["prefer_server_ciphers"] = true,
-                ["ecdh_curves"] = "X25519:secp521r1:secp384r1:prime256v1",
-                ["minimum_tls_version"] = "",
-                ["maximum_tls_version"] = "",
-                ["disable_ssl_session_ticket"] = false,
-                ["tls_name"] = req.Sni
+                ["cipher"] = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305",
+                ["cipher_tls13"] = "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
+                ["prefer_server_cipher"] = true,
+                ["alpn"] = new object?[] { "http/1.1" },
+                ["reuse_session"] = true,
+                ["session_ticket"] = false,
+                ["session_timeout"] = 600,
+                ["plain_http_response"] = "",
+                ["curves"] = "",
+                ["dhparam"] = ""
             },
             ["tcp"] = new Dictionary<string, object?>
             {
-                ["bind"] = true,
-                ["bind_addr"] = "0.0.0.0",
-                ["port"] = Port,
-                ["fastopen"] = false,
-                ["backlog"] = 128,
-                ["accept_timeout"] = 5.0,
-                ["connect_timeout"] = 5.0
+                ["prefer_ipv4"] = false,
+                ["no_delay"] = true,
+                ["keep_alive"] = true,
+                ["reuse_port"] = false,
+                ["fast_open"] = false,
+                ["fast_open_qlen"] = 20
             },
-            ["ipv6"] = new Dictionary<string, object?>
-            {
-                ["bind"] = false,
-                ["bind_addr"] = "::",
-                ["port"] = Port,
-                ["fastopen"] = false,
-                ["backlog"] = 128,
-                ["accept_timeout"] = 5.0,
-                ["connect_timeout"] = 5.0
-            },
-            ["tcp_fastopen"] = false,
-            ["verify_certificate"] = false,
-            ["cipher"] = "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305",
-            ["tls_versions"] = new object?[] { "TLSv1_2", "TLSv1_3" },
-            ["sess_timeout"] = 10.0,
-            ["ssl_session_size"] = 10,
             ["mysql"] = new Dictionary<string, object?>
             {
-                ["ssl_ca"] = "",
-                ["ssl_cert"] = "",
-                ["ssl_key"] = ""
-            },
-            ["users"] = new object?[] { password }
+                ["enabled"] = false,
+                ["server_addr"] = "127.0.0.1",
+                ["server_port"] = 3306,
+                ["database"] = "trojan",
+                ["username"] = "trojan",
+                ["password"] = "",
+                ["key"] = "",
+                ["cert"] = "",
+                ["ca"] = ""
+            }
         };
 
         var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });

@@ -78,10 +78,10 @@ public partial class MainWindow : FluentWindow
         if (idx < 0) return;
 
         var protocolId = ProtocolRegistry.All[idx].Id;
-        bool isXray = protocolId == ProtocolRegistry.XrayReality;
+        bool needsSni = protocolId != ProtocolRegistry.AmneziaWg;
 
-        SniBox.IsEnabled = isXray;
-        SniBox.Opacity = isXray ? 1.0 : 0.4;
+        SniBox.IsEnabled = needsSni;
+        SniBox.Opacity = needsSni ? 1.0 : 0.4;
     }
 
     private void OnBrowseClick(object sender, RoutedEventArgs e)

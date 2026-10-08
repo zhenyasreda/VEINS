@@ -39,12 +39,12 @@ public static class ServerProber
         }
         busyLines.AddRange(listening.Output
             .Split('\n')
-            .Where(l => (l.Contains(":443 ") || l.TrimEnd().EndsWith(":443")) && !l.Contains("(\"xray\"")));
+            .Where(l => l.Contains(":443 ") || l.TrimEnd().EndsWith(":443")));
 
         var udpListening = await ssh.RunAsync("ss -ulnp", requireRoot: false);
         busyLines.AddRange(udpListening.Output
             .Split('\n')
-            .Where(l => (l.Contains(":443 ") || l.TrimEnd().EndsWith(":443")) && !l.Contains("(\"xray\"")));
+            .Where(l => l.Contains(":443 ") || l.TrimEnd().EndsWith(":443")));
 
         if (busyLines.Count > 0)
         {

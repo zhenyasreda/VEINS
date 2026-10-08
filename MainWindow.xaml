@@ -144,7 +144,7 @@
                             </StackPanel>
 
                             <StackPanel Grid.Row="0" Grid.Column="2" Margin="{StaticResource FieldMargin}">
-                                <TextBlock x:Name="LblSni" Text="SNI (только VLESS/Reality)" FontSize="12" Opacity="0.7" Margin="0,0,0,4"/>
+                                <TextBlock x:Name="LblSni" Text="SNI (кроме AmneziaWG)" FontSize="12" Opacity="0.7" Margin="0,0,0,4"/>
                                 <ui:TextBox x:Name="SniBox"
                                             Text="www.google.com"
                                             PlaceholderText="www.google.com"

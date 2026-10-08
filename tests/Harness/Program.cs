@@ -68,12 +68,13 @@ switch (command)
 
         foreach (var cmd in new[]
         {
-            "systemctl stop xray",
-            "systemctl disable xray",
-            "rm -f /etc/systemd/system/xray.service",
-            "rm -f /usr/local/bin/xray",
-            "rm -rf /usr/local/etc/xray",
-            "rm -rf /usr/local/share/xray",
+            "systemctl stop xray hysteria-server trojan awg-quick@awg0 2>/dev/null; true",
+            "systemctl disable xray hysteria-server trojan awg-quick@awg0 2>/dev/null; true",
+            "rm -f /etc/systemd/system/xray.service /etc/systemd/system/hysteria-server.service /etc/systemd/system/trojan.service",
+            "rm -f /usr/local/bin/xray /usr/local/bin/hysteria /usr/local/bin/trojan",
+            "rm -rf /usr/local/etc/xray /usr/local/share/xray /etc/hysteria /etc/trojan",
+            "rm -f /etc/amnezia/amneziawg/awg0.conf",
+            "awg del awg0 2>/dev/null; true",
             "systemctl daemon-reload",
         })
         {
@@ -81,9 +82,7 @@ switch (command)
             Console.WriteLine($"[{r.ExitStatus}] {cmd} {r.Error}".TrimEnd());
         }
 
-        var which = Run(ssh, "command -v xray || echo NOT_FOUND");
-        Console.WriteLine($"xray binary: {which.Result.Trim()}");
-        var port443 = Run(ssh, "ss -tlnp | grep ':443 ' || echo FREE");
+        var port443 = Run(ssh, "ss -tlnp | grep ':443 ' || echo FREE; ss -ulnp | grep ':443 ' || echo FREE-UDP");
         Console.WriteLine($"port 443: {port443.Result.Trim()}");
         return 0;
     }
